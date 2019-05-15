@@ -62,7 +62,6 @@ class knight(pygame.sprite.Sprite):
             self.dirty = True
 
 
-
             # save the previous image and rect
             # oldImage = self.image
             # oldRect = self.rect
