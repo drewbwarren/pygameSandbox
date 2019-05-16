@@ -39,58 +39,43 @@ class knight(pygame.sprite.Sprite):
         self._frames_len = len(self.frames)
 
          
-    def update(self, key, t):
-        dirty = None
+    def update(self, key, t, background):
+        dirtyRect = None
         self.dirty = False
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_UP] and self.pos[1] > 0:
             self.frames = self.upframes
-            self.pos[1] -= 1
-        elif keys[pygame.K_LEFT]:
+            self.pos[1] -= 2
+        elif keys[pygame.K_LEFT] and self.pos[0] > 0:
             self.frames = self.leftframes
-            self.pos[0] -= 1
-        elif keys[pygame.K_DOWN]:
+            self.pos[0] -= 2
+        elif keys[pygame.K_DOWN] and self.pos[1] < 300-64:
             self.frames = self.downframes
-            self.pos[1] += 1
-        elif keys[pygame.K_RIGHT]:
+            self.pos[1] += 2
+        elif keys[pygame.K_RIGHT] and self.pos[0] < 400-64:
             self.frames = self.rightframes
-            self.pos[0] += 1
+            self.pos[0] += 2
         if keys[pygame.K_UP] or keys[pygame.K_LEFT] or keys[pygame.K_DOWN] or keys[pygame.K_RIGHT]:
             self.current = int(t*self._period)
             self.current %= self._frames_len
-            self.image = self.frames[self.current]
-            self.rect = self.image.get_rect(center=self.rect.center)
+
+            oldRect = self.rect
+
+            self.image = self.frames[self.current] # new sprite image for next frame
+            self.rect = screen.blit(self.image,self.pos) # corresponding rect
             self.dirty = True
+            
+            if self.rect.colliderect(oldRect): # if the new sprite frame doesn't move far enough
 
+                dirtyRect = self.rect.union(oldRect) # get the overall size of the dirty rectangle
 
-            # save the previous image and rect
-            # oldImage = self.image
-            # oldRect = self.rect
+                new_surf = pygame.Surface((dirtyRect[2],dirtyRect[3])) # create a new surface for creating this dirty image
+                back_surf = background.subsurface((self.pos[0],self.pos[1],dirtyRect[2],dirtyRect[3])) # find the background's image in that area
+                back_rect = back_surf.get_rect() # get the background's rect for that area
+                new_surf.blit(back_surf,(0,0))
+                new_surf.blit(self.image,(0,0))
+                dirtyRect = screen.blit(new_surf,tuple(self.pos))
 
-            # # self.image = self.frames[self.current]
-            # self.image = pygame.Surface((64,64)).convert_alpha()
-            # self.image.blit(self.frames[self.current],(0,0))
-
-            # background = pygame.Surface((400,300))
-            # background.fill((255,255,255))
-            # dirty_rect = background.subsurface((self.pos[0],self.pos[1],64,64))
-            # # self.rect = screen.blit(dirty_rect, (self.pos[0],self.pos[1]))
-
-
-            # # only needed if size changes within the animation
-            # # self.rect = self.image.get_rect(center=self.rect.center)
-            # # self.rect = screen.blit(self.image,self.pos)
-            # if self.rect.colliderect(oldRect):
-            #     print(self.rect,oldRect)
-            #     dirty = self.rect.union(dirty_rect.get_rect())
-            #     print(dirty)
-            # else:
-            #     print('seperate')
-            #     dirty = [self.rect, dirty_rect.get_rect()]
-
-            # self.dirty = True
-
-        return self.pos
-        # return dirty
+        return dirtyRect
     
     def blit(self, screen):
         print('rect',self.rect)
@@ -109,6 +94,7 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((400,300))
     background = get_image('megaman.jpg')
     screen.blit(background,(0,0))
+    pygame.display.flip()
     # screen.fill((255,255,255))
     done = False
     clock = pygame.time.Clock()
@@ -132,16 +118,7 @@ if __name__ == "__main__":
                 done = True
         
         keys = pygame.key.get_pressed()
-        pos = dude.update(keys, pygame.time.get_ticks())
-        
+        pos = dude.update(keys, pygame.time.get_ticks(), background)
         if dude.dirty:
-            # screen.fill((0,0,0))
-            screen.blit(background,(0,0))
-
-            # dude.blit(screen)
-            rect = screen.blit(dude.image, tuple(pos))
-            # print(rect)
-
-        pygame.display.flip()
-        # pygame.display.update(pos)
+            pygame.display.update(pos)
         clock.tick(60)
